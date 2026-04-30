@@ -39,7 +39,7 @@ Several implementation details are intentionally open. I'm making the following 
 
 **In scope for v1:** Search Ranking and Personalization pilot workloads; standard model packaging/deployment contract; basic registry integration, serving layer, cost attribution, health metrics, canary support, and routing policy.
 
-**Not in scope for v1:** Full serving support of every existing ML endpoint; deep training workload optimization; bespoke per-team serving frameworks that recreate fragmentation.
+**Not in scope for v1:** Full serving support of every existing ML endpoint, deep training workload optimization.
 
 ---
 
