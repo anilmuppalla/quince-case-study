@@ -95,82 +95,6 @@ open simulation-report.html
 This writes `simulation-report.html` as the portfolio index and
 `simulation-report-scenarios/*.html` as one page per scenario.
 
-**Keep the report in sync.** The renderer is deterministic — same
-scenarios in, same HTML out. After any change to `modelops_platform/`
-or `scenarios/*.json`, re-run `report-html` so the committed HTML
-matches the current code. There is no drift detection beyond this
-convention; the discipline is "edit, regenerate, commit together." Each HTML file
-loads a pinned Chart.js browser bundle from CDNJS for the chart layer, while
-the relevant simulation data is embedded in that file as escaped JSON. The
-index is intentionally a compact launcher: it maps each scenario to the
-platform value, primary evidence, and case-study requirement, then links to
-the scenario dashboard. Search remains the main traffic/failure workload,
-the planned promotion scenario uses Recommendations, and release-confidence
-scenarios use Fraud Detection. The index separates traffic/capacity/cost
-scenarios from release-confidence scenarios so canary rollout cases are not
-presented as cost ROI bars. Scenario pages include a left sidebar with the
-current scenario highlighted, then lead with a one-sentence thesis, compact
-model policy strip, a three-card impact summary for cost, replica policy,
-and autoscale trigger, an `Autoscaling Proof` table, and two evidence charts.
-Traffic bucket details remain available as the only
-expandable validation section on traffic pages. Raw CLI tables stay out of
-the reviewer-facing HTML; the CLI and unit tests remain the deterministic
-verification path.
-
-The reviewer-facing layer now includes a 24-hour traffic-window simulation.
-The individual serving decision trace remains the audit sample, but the main visual unit
-is production-scale aggregate demand. Scenario JSON files can define
-`traffic_windows` with per-model RPS and platform replica counts, plus
-`key_events` that explain why the platform scaled, held, overflowed, or
-scaled down. When a scenario does not define explicit windows, the report
-falls back to a simple 24-hour snapshot so every scenario remains renderable.
-For utilization-based scaling, the visible trigger evidence is observed
-max-pod GPU/CPU utilization compared with the model's utilization target.
-RPS remains demand context; it is not presented as the scale trigger.
-
-The report includes a portfolio-level impact chart plus two primary Chart.js
-charts for traffic/capacity scenarios so the reviewer can see the value of the
-platform without forcing cost attribution onto process scenarios:
-
-- Portfolio impact: before/after 24-hour attributed serving compute cost by
-  traffic/capacity scenario, with visible `S1`, `S2`, ... scenario labels.
-  Cost is attributed from model-owned replica-hours using each
-  endpoint cost profile. Release-confidence scenarios are listed separately
-  with canary guardrail evidence instead of cost bars.
-- 24-hour demand, before fixed-fleet safe capacity, after autoscaled safe
-  capacity, before fixed replicas, and after active platform replicas.
-- Cumulative 24-hour cost for before peak-provisioned capacity and the
-  adaptive platform.
-- Collapsed traffic bucket details split into two focused tables: before fixed
-  fleet capacity/risk and after autoscaled platform capacity/outcome.
-- Search Ranking is modeled as an `xgboost_ltr` ranking workload on Triton.
-  Recommendations is modeled as a TensorFlow Serving workload for planned
-  promotion pre-warm. Fraud Detection is modeled as an ONNX Runtime workload
-  for release-confidence canaries. GPU-backed scenario headers show the GPU
-  type and cost basis: AWS `g5.xlarge` / NVIDIA A10G at `$1.006/GPU-hr`.
-  The HTML dashboard uses GPU-hours as the visible cost unit; RPS remains
-  demand/capacity context.
-- `Autoscaling Proof` table listing only model-level replica changes,
-  the trigger signal, before state, after state, and proof. For utilization
-  rows, the proof is observed max-pod GPU/CPU percentage versus the model
-  target; RPS appears only as demand context.
-
-The report uses one before/after story with different evidence in each chart:
-before fixed-fleet capacity and replicas show service risk, before
-peak-provisioned cost shows the expensive manual workaround, and the adaptive
-platform shows autoscaled capacity, active replicas, scale-out/scale-down
-behavior, and cost.
-
-To avoid overloading reviewers, traffic scenario pages keep only the split
-bucket-level details as an optional expansion. The traffic event audit and raw
-CLI audit are omitted from the HTML because `Autoscaling Proof` already
-captures the decision trail, and the terminal CLI remains available for full
-verification. Release-confidence scenarios still show compact guardrail
-evidence because the primary proof is the canary decision rather than serving
-cost.
-
-The terminal CLI remains the deterministic verification path; the HTML
-report is easier to browse and explain.
 
 ## Tests
 
@@ -222,12 +146,6 @@ The internal route-trace values are intentionally rounded:
 |---|---|---:|---:|
 | `gpu_a10` | AWS `g5.xlarge`, 1x NVIDIA A10G, about $1.006/hour | 200 QPS | $0.0014 |
 | `gpu_h100` | AWS `p5.48xlarge`, 8x NVIDIA H100, about $55.04/hour or $6.88/GPU-hour | 100 QPS | $0.0191 |
-
-These are not Quince production costs. They exclude reserved discounts,
-spot pricing, network/storage, model-specific batching efficiency, and
-real utilization variance. The point is to keep the demo's relative cost
-shape realistic: A10 is the mainstream Search serving path and H100
-capacity is premium incident/overflow capacity.
 
 
 ## Routing Policy (Summary)
