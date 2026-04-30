@@ -1,0 +1,356 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Endpoint Unavailability - ModelOps Scenario</title><style>
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #172033; background: #f6f8fb; }
+* { box-sizing: border-box; }
+header { padding: 32px 40px; background: #172033; color: white; }
+header a { color: #dbe7ff; }
+.layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 24px; padding: 24px; }
+.index-layout { grid-template-columns: minmax(0, 1fr); max-width: 1180px; margin: 0 auto; }
+.scenario-page-layout { grid-template-columns: 280px minmax(0, 1fr); max-width: 1280px; margin: 0 auto; }
+nav { position: sticky; top: 16px; align-self: start; background: white; border: 1px solid #d8dee9; border-radius: 14px; padding: 16px; }
+nav a { display: flex; gap: 8px; align-items: flex-start; color: #1f5eff; text-decoration: none; padding: 9px 8px; border-bottom: 1px solid #edf0f5; border-radius: 8px; }
+nav a:last-child { border-bottom: 0; }
+nav a:hover { background: #f2f6ff; }
+nav a.active { background: #eaf1ff; color: #173f9f; font-weight: 750; box-shadow: inset 3px 0 0 #1f5eff; }
+.nav-index-link { display: block; margin-bottom: 8px; font-weight: 700; color: #40516a; }
+.nav-scenario-number { flex: 0 0 auto; color: #607086; font-size: 12px; font-weight: 700; min-width: 24px; padding-top: 2px; }
+.nav-scenario-title { min-width: 0; }
+main { display: grid; gap: 24px; min-width: 0; }
+.summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.summary-card, .scenario, .phase, .impact, .portfolio-charts, .scenario-index, .scenario-link-card, .traffic-summary, .scaling-decisions, .key-events, .window-summary, .raw-audit, .scenario-type-note, .canary-summary, .deployment-regions, .index-overview { background: white; border: 1px solid #d8dee9; border-radius: 14px; padding: 18px; box-shadow: 0 1px 4px rgba(10, 20, 40, 0.04); }
+.summary-card, .scenario, .phase, .impact, .portfolio-charts, .scenario-index, .scenario-link-card, .traffic-summary, .scaling-decisions, .key-events, .window-summary, .raw-audit, .scenario-type-note, .canary-summary, .deployment-regions, .impact article, .index-overview { min-width: 0; }
+.summary-card span { display: block; color: #607086; font-size: 13px; }
+.summary-card strong { font-size: 24px; overflow-wrap: anywhere; }
+.summary-card small { display: block; color: #607086; font-size: 12px; line-height: 1.35; margin-top: 6px; }
+.summary-traffic { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+.index-summary { margin-top: 12px; }
+.cost-math { margin: 14px 0 0; padding: 10px 12px; border: 1px solid #d8dee9; border-radius: 8px; background: #fbfcff; color: #40516a; font-size: 13px; line-height: 1.45; }
+.cost-math code { color: #172033; font-weight: 700; }
+.traffic-summary, .scaling-decisions, .key-events, .window-summary, .raw-audit, .scenario-type-note, .canary-summary, .deployment-regions { margin: 16px 0; box-shadow: none; }
+.traffic-summary p, .scaling-decisions p, .key-events p, .window-summary p, .scenario-type-note p, .canary-summary p, .deployment-regions p { color: #40516a; }
+.key-events summary, .window-summary summary { cursor: pointer; font-weight: 700; color: #172033; }
+.scenario-thesis { margin: 0 0 14px; color: #142033; font-size: 18px; line-height: 1.45; max-width: 960px; }
+.scenario-setup { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 4px; }
+.setup-pill { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 10px; border: 1px solid #d8dee9; border-radius: 8px; background: #fbfcff; color: #40516a; font-size: 13px; }
+.setup-pill span { padding-right: 6px; border-right: 1px solid #d8dee9; }
+.setup-pill span:last-child { border-right: 0; padding-right: 0; }
+.setup-pill .setup-model { color: #172033; font-weight: 700; }
+.raw-audit { background: #fbfcff; padding: 0; overflow: hidden; }
+.raw-audit summary { cursor: pointer; padding: 14px 18px; font-weight: 700; color: #172033; }
+.raw-audit summary:hover { background: #f2f6ff; }
+.raw-audit .phase { border: 0; border-top: 1px solid #d8dee9; border-radius: 0; box-shadow: none; margin: 0; }
+.audit-subdetail { border: 1px solid #d8dee9; border-radius: 10px; margin: 10px 0; background: white; }
+.audit-subdetail summary { padding: 10px 12px; font-size: 14px; }
+.audit-subdetail table, .audit-subdetail .capacity-grid, .audit-subdetail .metrics { margin-left: 12px; margin-right: 12px; }
+.impact-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.impact article { border: 1px solid #d8dee9; border-radius: 12px; padding: 14px; background: #fbfcff; }
+.scenario-card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.scenario-index-group { margin-top: 18px; }
+.scenario-index-group > h3 { margin-bottom: 6px; }
+.scenario-index-group > p { color: #40516a; }
+.scenario-table td:first-child { min-width: 170px; }
+.scenario-table td:nth-child(2) { min-width: 250px; }
+.scenario-table td:nth-child(3) { min-width: 260px; }
+.scenario-link-card h3 { margin-top: 0; }
+.scenario-link-card a { color: #1f5eff; text-decoration: none; }
+.scenario-link-card a:hover { text-decoration: underline; }
+.scenario-type-badge { display: inline-flex; align-items: center; min-height: 24px; padding: 3px 8px; border-radius: 999px; background: #edf3ff; color: #1f4fbf; font-size: 12px; font-weight: 700; margin-bottom: 10px; }
+.scenario-before-after { border: 1px solid #d8dee9; border-radius: 14px; padding: 14px; margin: 16px 0; background: #fffdf8; }
+.scenario-before-after h5 { margin: 0 0 8px; color: #607086; text-transform: uppercase; letter-spacing: .04em; font-size: 12px; }
+.scenario-charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; margin: 16px 0; padding: 14px; background: #fbfcff; border: 1px solid #d8dee9; border-radius: 14px; }
+.scenario-charts > h4, .scenario-charts > p { grid-column: 1 / -1; margin: 0 0 4px; }
+.portfolio-charts p, .scenario-charts p { color: #40516a; }
+.chart-note { margin-top: -6px; font-size: 14px; line-height: 1.5; }
+.scenario-key { margin-top: 14px; border: 1px solid #d8dee9; border-radius: 10px; padding: 12px; background: #fbfcff; }
+.scenario-key summary { cursor: pointer; font-weight: 700; color: #142033; }
+.scenario-key table { margin-top: 10px; }
+.window-summary h4 { margin: 14px 0 6px; color: #172033; font-size: 14px; }
+.window-summary h4:first-of-type { margin-top: 8px; }
+.chart-panel { min-width: 0; padding: 14px; background: white; border: 1px solid #d8dee9; border-radius: 12px; }
+.chart-panel-wide { grid-column: 1 / -1; }
+.chart-panel h3, .chart-panel h5 { margin: 0 0 10px; color: #172033; }
+.chart-canvas-wrap { position: relative; height: 280px; width: 100%; }
+.chart-canvas-wrap canvas { display: block; width: 100% !important; max-width: 100%; }
+.portfolio-charts .chart-canvas-wrap { height: 340px; }
+.chart-fallback { grid-column: 1 / -1; border: 1px solid #f0c36d; background: #fff8e8; color: #715000; border-radius: 8px; padding: 10px 12px; font-size: 13px; }
+.timeline { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.timeline h4 { width: 100%; margin-bottom: 0; }
+.timeline span { background: #e9efff; color: #173f9f; border-radius: 999px; padding: 6px 10px; font-weight: 600; }
+.capacity-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.capacity-card { border: 1px solid #d8dee9; border-radius: 12px; padding: 14px; background: #fbfcff; }
+.capacity-card h5 { margin: 0; font-size: 16px; }
+.capacity-card p { margin: 4px 0 12px; color: #607086; }
+.metrics { display: grid; grid-template-columns: 120px 1fr; gap: 4px 8px; margin: 8px 0; }
+.metrics dt { color: #607086; }
+.metrics dd { margin: 0; font-weight: 650; }
+.metric-bar { height: 10px; background: #e6eaf2; border-radius: 999px; overflow: hidden; margin: 8px 0 12px; }
+.bar-fill { height: 100%; background: linear-gradient(90deg, #3d7eff, #21a67a); border-radius: 999px; }
+table { display: block; width: 100%; overflow-x: auto; border-collapse: collapse; margin: 10px 0 18px; font-size: 13px; }
+th, td { text-align: left; border-bottom: 1px solid #e4e8f0; padding: 8px; vertical-align: top; }
+th { color: #607086; font-weight: 700; background: #f8faff; }
+.badge { border-radius: 999px; padding: 3px 8px; font-weight: 700; white-space: nowrap; }
+.badge.ok { background: #e8f7ef; color: #137344; }
+.badge.bad { background: #fdecec; color: #a02727; }
+.canary { border-left: 4px solid #3d7eff; padding-left: 12px; }
+@media (max-width: 900px) { .layout { grid-template-columns: 1fr; } nav { position: static; } .summary { grid-template-columns: 1fr 1fr; } .impact-grid { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { header { padding: 24px; } .layout { padding: 14px; } .summary { grid-template-columns: 1fr; } .scenario-charts { grid-template-columns: 1fr; } .chart-canvas-wrap, .portfolio-charts .chart-canvas-wrap { height: 260px; } }
+</style><script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script><script type="application/json" id="report-data">{"portfolio":{"labels":["Endpoint Unavailability"],"axisLabels":["S1: Unavailable"],"beforePeakCost":[23.712],"afterPeakCost":[14.82],"savingsPct":[37.5],"beforeTotalCost":[193.54],"afterTotalCost":[59.72],"totalSavingsPct":[69.1],"excluded":[]},"scenarios":[{"name":"Endpoint Unavailability","scenarioIndex":4,"axisLabel":"S4: Unavailable","scenarioType":"traffic-cost","scenarioTypeLabel":"Traffic / capacity / cost","evidenceFocus":"24-hour demand, autoscaling, service risk, and attributed serving cost","costPortfolioEligible":true,"labels":["now","after HPA"],"traffic":{"labels":["00:00-10:00 Healthy baseline","10:00-10:15 Readiness failure detected","10:15-14:00 Replacement capacity active","14:00-24:00 Incident cleared"],"shortLabels":["00:00-10:00","10:00-10:15","10:15-14:00","14:00-24:00"],"axisLabels":["0-10h","10:00","10:15-14h","14-24h"],"events":["normal Search traffic before readiness failure","rolling replacement begins: bad Search pod removed from routing, new healthy pod provisioning","replacement Search pods are healthy and serving; old unhealthy pod has drained and terminated","rolling replacement complete; fleet is back to normal headcount on healthy pods"],"scaleActions":["initial platform posture","hold steady","scale out: search-ranking-v1 2-\u003e5","scale down: search-ranking-v1 5-\u003e2"],"totalRps":[180,300,500,180],"fixedCapacityRps":[200,100,200,200],"platformCapacityRps":[200,200,500,200],"manualCapacityRps":[800,800,800,800],"fixedReplicas":[2,1,2,2],"platformReplicas":[2,2,5,2],"recommendedReplicas":[2,4,5,2],"manualReplicas":[8,8,8,8],"fixedHourlyCost":[2.016,1.008,2.016,2.016],"platformHourlyCost":[2.016,2.016,5.04,2.016],"manualHourlyCost":[8.064,8.064,8.064,8.064],"fixedCumulativeCost":[20.16,20.412,27.972,48.132],"platformCumulativeCost":[20.16,20.664,39.564,59.724],"manualCumulativeCost":[80.64,82.656,112.896,193.536],"fixedAtRisk":[0,180000,4050000,0],"platformServed":[6480000,180000,6750000,6480000],"platformOverflow":[0,90000,0,0],"platformRejected":[0,0,0,0],"fixedP99":[32,132.5,120.0,32],"platformP99":[32,49.5,32,32],"slaTarget":[50,50,50,50],"summary":{"peakRps":500,"replicaRange":"2 -\u003e 5","manualCostTotal":193.54,"platformCostTotal":59.72,"fixedCostTotal":48.13,"savingsPct":69.1,"fixedAtRisk":4230000,"platformRejected":0,"peakFixedP99":132.5,"peakPlatformP99":49.5}},"baselineLabel":"before: peak-provisioned","rps":[295,295],"beforeReplicas":[8,8],"afterReplicas":[3,5],"beforeHourlyCost":[23.712,23.712],"afterHourlyCost":[8.892,14.82],"beforePeakCost":23.712,"afterPeakCost":14.82,"savingsPct":37.5,"canaryDecision":null}]}</script></head><body><header><h1>Endpoint Unavailability</h1><p>Search Ranking serving walkthrough. Demand is context; GPU/CPU utilization, latency, health, and planned events are the decision evidence.</p></header><div class="layout scenario-page-layout"><nav class="scenario-nav"><h2>Scenarios</h2><a class="nav-index-link" href="../simulation-report.html">Portfolio index</a><a href="scenario-1-normal-load.html"><span class="nav-scenario-number">S1</span><span class="nav-scenario-title">Normal Load</span></a><a href="scenario-2-organic-traffic-spike.html"><span class="nav-scenario-number">S2</span><span class="nav-scenario-title">Organic Traffic Spike</span></a><a href="scenario-3-planned-promotion---flash-sale-pre-warm.html"><span class="nav-scenario-number">S3</span><span class="nav-scenario-title">Planned Promotion / Flash-Sale Pre-Warm</span></a><a href="scenario-4-endpoint-unavailability.html" class="active" aria-current="page"><span class="nav-scenario-number">S4</span><span class="nav-scenario-title">Endpoint Unavailability</span></a><a href="scenario-5-fraud-canary---auto-promote.html"><span class="nav-scenario-number">S5</span><span class="nav-scenario-title">Fraud Canary - Auto-Promote</span></a><a href="scenario-6-fraud-canary---requires-owner-review.html"><span class="nav-scenario-number">S6</span><span class="nav-scenario-title">Fraud Canary - Requires Owner Review</span></a></nav><main><section class="scenario" id="scenario-4-endpoint-unavailability"><h2>Endpoint Unavailability</h2><p class="scenario-thesis">For endpoint unavailability, the platform applies the rolling replacement pattern to runtime healing: bad pod stops receiving traffic, a fresh pod comes up healthy, traffic shifts to it, the bad pod drains. High-priority Search overflows to healthy / premium capacity during the readiness gap. Incident-day cost: $59.72 versus $193.54 for peak-provisioned coverage.</p><div class="scenario-setup"><div class="setup-pill"><span class="setup-model">search-ranking-v1</span><span>xgboost_ltr on triton</span><span>P99 50ms</span><span>GPU target 50%</span><span>CPU target 60%</span><span>AWS g5.xlarge / NVIDIA A10G 24GB</span><span>$1.006/GPU-hr</span></div></div><section class="traffic-summary"><h4>Impact Summary</h4><div class="summary summary-traffic"><div class="summary-card"><span>24h cost (69.1% lower)</span><strong>$193.54 -&gt; $59.72</strong><small>NVIDIA A10G replica-hours @ $1.006/GPU-hr</small></div><div class="summary-card"><span>Replica policy</span><strong>fixed 8; platform 2 -&gt; 5</strong><small>peak demand 500 RPS</small></div><div class="summary-card"><span>Autoscale trigger</span><strong>Health/readiness trigger</strong><small>utilization is the trigger; RPS is demand context</small></div></div><p class="cost-math"><strong>Cost math:</strong> 24h spend = active replica-hours x $1.006/GPU-hr. <code>gpu_cost_per_1k</code> = $1.006 / (200 safe allocation RPS x 3600 / 1000) = $0.0014 per 1K requests. Cloud billing remains GPU/instance-hours; per-1K is an internal routing allocation.</p></section><section class="scaling-decisions"><h4>Autoscaling Proof</h4><p>Replica changes are explained by the trigger signal first. For GPU/CPU events, the proof is observed max-pod utilization compared with the model target; RPS is shown only as demand context.</p><table><thead><tr><th>time</th><th>decision</th><th>trigger</th><th>before</th><th>after</th><th>proof</th></tr></thead><tbody><tr><td>10:15</td><td>scale out 2-&gt;5</td><td>healthy; demand 500 RPS</td><td>2 replicas, 200 RPS safe cap</td><td>5 replicas, 500 RPS safe cap</td><td>Health/readiness event: replacement Search pods are healthy and serving; old unhealthy pod has drained and terminated</td></tr><tr><td>14:00</td><td>scale down 5-&gt;2</td><td>healthy; demand 180 RPS</td><td>5 replicas, 500 RPS safe cap</td><td>2 replicas, 200 RPS safe cap</td><td>Health/readiness event: rolling replacement complete; fleet is back to normal headcount on healthy pods</td></tr></tbody></table></section><section class="scenario-charts"><h4>Evidence Charts</h4><p class="chart-note"><strong>Capacity chart:</strong> RPS demand and safe capacity use the left axis; replica counts use the right axis. The fixed fleet stays flat while platform replicas change with the scaling policy.</p><div class="chart-panel chart-panel-wide"><h5>Before Fixed Fleet vs After Autoscaling</h5><div class="chart-canvas-wrap"><canvas id="scenario-simulation-4" aria-label="24-hour demand, safe capacity, and replica count chart"></canvas></div></div><div class="chart-panel chart-panel-wide"><h5>Cumulative Cost: Before vs After</h5><div class="chart-canvas-wrap"><canvas id="scenario-cost-4" aria-label="24-hour cumulative before versus after cost chart"></canvas></div></div></section><details class="window-summary"><summary>Traffic Bucket Details</summary><p>Bucket-level validation split by operating model.</p><h4>Before: Fixed Fleet Capacity</h4><table><thead><tr><th>bucket</th><th>window</th><th>label</th><th>incoming RPS</th><th>fixed safe capacity</th><th>fixed replicas</th><th>fixed P99 ms</th><th>at-risk requests</th></tr></thead><tbody><tr><td>0-10h</td><td>00:00-10:00</td><td>Healthy baseline</td><td>180</td><td>200</td><td>2</td><td>32.0</td><td>0</td></tr><tr><td>10:00</td><td>10:00-10:15</td><td>Readiness failure detected</td><td>300</td><td>100</td><td>1</td><td>132.5</td><td>180.0K</td></tr><tr><td>10:15-14h</td><td>10:15-14:00</td><td>Replacement capacity active</td><td>500</td><td>200</td><td>2</td><td>120.0</td><td>4.0M</td></tr><tr><td>14-24h</td><td>14:00-24:00</td><td>Incident cleared</td><td>180</td><td>200</td><td>2</td><td>32.0</td><td>0</td></tr></tbody></table><h4>After: Autoscaled Platform Capacity</h4><table><thead><tr><th>bucket</th><th>window</th><th>label</th><th>incoming RPS</th><th>autoscaled safe capacity</th><th>active replicas</th><th>platform P99 ms</th><th>platform outcome</th></tr></thead><tbody><tr><td>0-10h</td><td>00:00-10:00</td><td>Healthy baseline</td><td>180</td><td>200</td><td>2</td><td>32.0</td><td>6.5M served; 0 overflow; 0 rejected</td></tr><tr><td>10:00</td><td>10:00-10:15</td><td>Readiness failure detected</td><td>300</td><td>200</td><td>2</td><td>49.5</td><td>180.0K served; 90.0K overflow; 0 rejected</td></tr><tr><td>10:15-14h</td><td>10:15-14:00</td><td>Replacement capacity active</td><td>500</td><td>500</td><td>5</td><td>32.0</td><td>6.8M served; 0 overflow; 0 rejected</td></tr><tr><td>14-24h</td><td>14:00-24:00</td><td>Incident cleared</td><td>180</td><td>200</td><td>2</td><td>32.0</td><td>6.5M served; 0 overflow; 0 rejected</td></tr></tbody></table></details></section></main></div>
+<script>
+(function () {
+  const colors = {
+    before: '#c14545',
+    after: '#21a67a',
+    demand: '#3d7eff',
+    replicas: '#7c5cff',
+    fixedReplicas: '#7d8794',
+    served: '#21a67a',
+    overflow: '#d99018',
+    rejected: '#c14545',
+    gpu: '#3d7eff',
+    gpuTarget: '#83a9ff',
+    cpu: '#7c5cff',
+    cpuTarget: '#b8a8ff'
+  };
+
+  function readReportData() {
+    const node = document.getElementById('report-data');
+    if (!node) return { portfolio: {}, scenarios: [] };
+    return JSON.parse(node.textContent);
+  }
+
+  function money(value) {
+    return '$' + Number(value || 0).toFixed(2);
+  }
+
+  function compact(value) {
+    const n = Number(value || 0);
+    const a = Math.abs(n);
+    if (a >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+    if (a >= 1000) return (n / 1000).toFixed(1) + 'K';
+    return Math.round(n).toString();
+  }
+
+  function baseOptions(extra) {
+    return Object.assign({
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 12, usePointStyle: true } },
+        tooltip: { callbacks: {} }
+      },
+      scales: {
+        x: { ticks: { color: '#607086', maxRotation: 0, autoSkip: false }, grid: { display: false } }
+      }
+    }, extra || {});
+  }
+
+  function renderPortfolio(data) {
+    const canvas = document.getElementById('portfolio-impact-chart');
+    if (!canvas || !data.portfolio) return;
+    const scenarioLabels = (data.portfolio.axisLabels || data.portfolio.labels).map(function (label) {
+      const parts = String(label).split(': ');
+      return parts.length === 2 ? [parts[0], parts[1]] : label;
+    });
+    if (!scenarioLabels.length) return;
+    const before = data.portfolio.beforeTotalCost || data.portfolio.beforePeakCost;
+    const after = data.portfolio.afterTotalCost || data.portfolio.afterPeakCost;
+    const savings = data.portfolio.totalSavingsPct || data.portfolio.savingsPct;
+    new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: scenarioLabels,
+        datasets: [
+          { label: 'Before: peak-provisioned', data: before, backgroundColor: colors.before, borderRadius: 4 },
+          { label: 'After platform', data: after, backgroundColor: colors.after, borderRadius: 4 }
+        ]
+      },
+      options: baseOptions({
+        plugins: {
+          legend: { position: 'bottom', labels: { boxWidth: 12, usePointStyle: true } },
+          tooltip: {
+            callbacks: {
+              title: function (items) {
+                return data.portfolio.labels[items[0].dataIndex];
+              },
+              afterBody: function (items) {
+                const index = items[0].dataIndex;
+                return [
+                  'Savings: ' + savings[index] + '%',
+                  'Attributed to model-owned serving replica-hours in this scenario'
+                ];
+              },
+              label: function (context) {
+                return context.dataset.label + ': ' + money(context.parsed.y);
+              }
+            }
+          }
+        },
+        scales: {
+          x: { title: { display: true, text: 'Scenario' }, ticks: { color: '#607086', maxRotation: 0, autoSkip: false }, grid: { display: false } },
+          y: { beginAtZero: true, title: { display: true, text: 'Attributed 24-hour serving cost' }, ticks: { callback: money } }
+        }
+      })
+    });
+  }
+
+  function renderSimulation(index, scenario) {
+    const canvas = document.getElementById('scenario-simulation-' + index);
+    if (!canvas) return;
+    const traffic = scenario.traffic || {};
+    const hasTraffic = Array.isArray(traffic.shortLabels) && traffic.shortLabels.length;
+    if (hasTraffic) {
+      new Chart(canvas, {
+        data: {
+          labels: traffic.axisLabels || traffic.shortLabels,
+          datasets: [
+            { type: 'line', label: 'Incoming demand (RPS)', data: traffic.totalRps, yAxisID: 'yRps', borderColor: colors.demand, backgroundColor: colors.demand, tension: 0.2, pointRadius: 3 },
+            { type: 'line', label: 'Before: fixed-fleet safe capacity (RPS)', data: traffic.fixedCapacityRps, yAxisID: 'yRps', borderColor: colors.before, backgroundColor: colors.before, borderDash: [5, 4], tension: 0.15, pointRadius: 2 },
+            { type: 'line', label: 'After: autoscaled safe capacity (RPS)', data: traffic.platformCapacityRps, yAxisID: 'yRps', borderColor: colors.after, backgroundColor: colors.after, tension: 0.15, pointRadius: 2 },
+            { type: 'line', label: 'Before: fixed fleet replicas', data: traffic.fixedReplicas, yAxisID: 'yReplicas', borderColor: colors.fixedReplicas, backgroundColor: colors.fixedReplicas, borderDash: [5, 4], tension: 0.15, pointRadius: 2 },
+            { type: 'line', label: 'After: active platform replicas', data: traffic.platformReplicas, yAxisID: 'yReplicas', borderColor: colors.replicas, backgroundColor: colors.replicas, tension: 0.15, pointRadius: 3 }
+          ]
+        },
+        options: baseOptions({
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, usePointStyle: true } },
+            tooltip: {
+              callbacks: {
+                title: function (items) {
+                  return traffic.labels[items[0].dataIndex] || items[0].label;
+                },
+                afterBody: function (items) {
+                  const i = items[0].dataIndex;
+                  return [
+                    traffic.events[i] ? 'Event: ' + traffic.events[i] : 'Event: none',
+                    'Decision: ' + traffic.scaleActions[i],
+                    'Before fixed fleet: ' + traffic.fixedReplicas[i] + ' replicas',
+                    'After active platform: ' + traffic.platformReplicas[i] + ' replicas',
+                    'Autoscaler recommendation: ' + traffic.recommendedReplicas[i] + ' replicas',
+                    'Current P99 / Platform P99: ' + traffic.fixedP99[i] + ' ms / ' + traffic.platformP99[i] + ' ms',
+                    'SLA target: ' + traffic.slaTarget[i] + ' ms'
+                  ];
+                },
+                label: function (context) {
+                  const unit = context.dataset.yAxisID === 'yReplicas' ? ' replicas' : ' RPS';
+                  return context.dataset.label + ': ' + compact(context.parsed.y) + unit;
+                }
+              }
+            }
+          },
+          scales: {
+            x: { ticks: { color: '#607086', maxRotation: 0, autoSkip: false }, grid: { display: false } },
+            yRps: { beginAtZero: true, position: 'left', title: { display: true, text: 'RPS / safe capacity' }, ticks: { callback: compact } },
+            yReplicas: { beginAtZero: true, position: 'right', title: { display: true, text: 'Replicas' }, grid: { drawOnChartArea: false }, ticks: { precision: 0 } }
+          }
+        })
+      });
+      return;
+    }
+    new Chart(canvas, {
+      data: {
+        labels: scenario.labels,
+        datasets: [
+          { type: 'bar', label: 'Static baseline cost', data: scenario.beforeHourlyCost, yAxisID: 'yCost', backgroundColor: 'rgba(193,69,69,.72)', borderRadius: 4 },
+          { type: 'bar', label: 'After platform cost', data: scenario.afterHourlyCost, yAxisID: 'yCost', backgroundColor: 'rgba(33,166,122,.72)', borderRadius: 4 },
+          { type: 'line', label: 'Incoming RPS', data: scenario.rps, yAxisID: 'yRps', borderColor: colors.demand, backgroundColor: colors.demand, tension: 0.25, pointRadius: 3 },
+          { type: 'line', label: 'Adaptive replicas', data: scenario.afterReplicas, yAxisID: 'yReplicas', borderColor: colors.replicas, backgroundColor: colors.replicas, borderDash: [5, 4], tension: 0.25, pointRadius: 3 }
+        ]
+      },
+      options: baseOptions({
+        plugins: {
+          legend: { position: 'bottom', labels: { boxWidth: 12, usePointStyle: true } },
+          tooltip: {
+            callbacks: {
+              afterBody: function (items) {
+                const i = items[0].dataIndex;
+                return [
+                  'Before fixed fleet: ' + scenario.beforeReplicas[i] + ' replicas',
+                  'After active platform: ' + scenario.afterReplicas[i] + ' replicas'
+                ];
+              },
+              label: function (context) {
+                if (context.dataset.yAxisID === 'yCost') return context.dataset.label + ': ' + money(context.parsed.y);
+                return context.dataset.label + ': ' + context.parsed.y;
+              }
+            }
+          }
+        },
+        scales: {
+          x: { ticks: { color: '#607086', maxRotation: 0, autoSkip: false }, grid: { display: false } },
+          yCost: { beginAtZero: true, position: 'left', title: { display: true, text: 'Hourly cost' }, ticks: { callback: money } },
+          yRps: { beginAtZero: true, position: 'right', title: { display: true, text: 'RPS' }, grid: { drawOnChartArea: false } },
+          yReplicas: { beginAtZero: true, position: 'right', display: false, grid: { drawOnChartArea: false } }
+        }
+      })
+    });
+  }
+
+  function renderCost(index, scenario) {
+    const canvas = document.getElementById('scenario-cost-' + index);
+    if (!canvas) return;
+    const traffic = scenario.traffic || {};
+    const hasTraffic = Array.isArray(traffic.shortLabels) && traffic.shortLabels.length;
+    if (!hasTraffic) return;
+    new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: traffic.axisLabels || traffic.shortLabels,
+        datasets: [
+          { label: 'Before: peak-provisioned', data: traffic.manualCumulativeCost, borderColor: colors.before, backgroundColor: colors.before, tension: 0.2, pointRadius: 3 },
+          { label: 'After: platform', data: traffic.platformCumulativeCost, borderColor: colors.after, backgroundColor: colors.after, tension: 0.2, pointRadius: 3 }
+        ]
+      },
+      options: baseOptions({
+        plugins: {
+          legend: { position: 'bottom', labels: { boxWidth: 12, usePointStyle: true } },
+          tooltip: {
+            callbacks: {
+              title: function (items) {
+                return traffic.labels[items[0].dataIndex] || items[0].label;
+              },
+              afterBody: function (items) {
+                const i = items[0].dataIndex;
+                return [
+                  'Hourly cost: before peak ' + money(traffic.manualHourlyCost[i]) + ', platform ' + money(traffic.platformHourlyCost[i]),
+                  'Decision: ' + traffic.scaleActions[i]
+                ];
+              },
+              label: function (context) {
+                return context.dataset.label + ': ' + money(context.parsed.y);
+              }
+            }
+          }
+        },
+        scales: {
+          x: { ticks: { color: '#607086', maxRotation: 0, autoSkip: false }, grid: { display: false } },
+          y: { beginAtZero: true, title: { display: true, text: 'Cumulative 24-hour cost' }, ticks: { callback: money } }
+        }
+      })
+    });
+  }
+
+  function showFallback(message) {
+    document.querySelectorAll('.scenario-charts, .portfolio-charts').forEach(section => {
+      const node = document.createElement('div');
+      node.className = 'chart-fallback';
+      node.textContent = message;
+      section.appendChild(node);
+    });
+  }
+
+  window.addEventListener('DOMContentLoaded', function () {
+    const data = readReportData();
+    if (typeof Chart === 'undefined') {
+      showFallback('Chart.js did not load. The deterministic tables below still show the simulation output.');
+      return;
+    }
+    renderPortfolio(data);
+    data.scenarios.forEach(function (scenario, i) {
+      const index = scenario.scenarioIndex || i + 1;
+      renderSimulation(index, scenario);
+      renderCost(index, scenario);
+    });
+  });
+})();
+</script>
+</body></html>

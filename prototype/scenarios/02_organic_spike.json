@@ -1,0 +1,286 @@
+{
+  "name": "Organic Traffic Spike",
+  "description": "Unplanned Search Ranking QPS surge. The scenario shows the normal operating point, the threshold breach that triggers scale-out, and the post-scale state where newly provisioned GPU capacity absorbs the spike without dropping Search traffic.",
+  "traffic_windows": [
+    {
+      "label": "Overnight baseline",
+      "start_hour": 0,
+      "end_hour": 6,
+      "rps_by_model": {
+        "search-ranking-v1": 180
+      },
+      "platform_replicas": {
+        "search-ranking-v1": 2
+      },
+      "event": "normal Search pilot load"
+    },
+    {
+      "label": "Morning ramp",
+      "start_hour": 6,
+      "end_hour": 8,
+      "rps_by_model": {
+        "search-ranking-v1": 300
+      },
+      "platform_replicas": {
+        "search-ranking-v1": 3
+      },
+      "event": "Search max-pod GPU crosses the 50% utilization target"
+    },
+    {
+      "label": "Spike detected before pods ready",
+      "start_hour": 8,
+      "end_hour": 8.25,
+      "rps_by_model": {
+        "search-ranking-v1": 420
+      },
+      "platform_replicas": {
+        "search-ranking-v1": 3
+      },
+      "recommended_replicas": {
+        "search-ranking-v1": 5
+      },
+      "event": "organic spike detected; HPA recommendation emitted"
+    },
+    {
+      "label": "Scale-out serving peak",
+      "start_hour": 8.25,
+      "end_hour": 12,
+      "rps_by_model": {
+        "search-ranking-v1": 1400
+      },
+      "platform_replicas": {
+        "search-ranking-v1": 14
+      },
+      "event": "new GPU pods ready; platform absorbs Search peak"
+    },
+    {
+      "label": "Sustained elevated traffic",
+      "start_hour": 12,
+      "end_hour": 18,
+      "rps_by_model": {
+        "search-ranking-v1": 900
+      },
+      "platform_replicas": {
+        "search-ranking-v1": 9
+      },
+      "event": "right-sized steady peak"
+    },
+    {
+      "label": "Cooldown",
+      "start_hour": 18,
+      "end_hour": 21,
+      "rps_by_model": {
+        "search-ranking-v1": 320
+      },
+      "platform_replicas": {
+        "search-ranking-v1": 4
+      },
+      "event": "autoscaler starts scale-down"
+    },
+    {
+      "label": "Evening baseline",
+      "start_hour": 21,
+      "end_hour": 24,
+      "rps_by_model": {
+        "search-ranking-v1": 180
+      },
+      "platform_replicas": {
+        "search-ranking-v1": 2
+      },
+      "event": "capacity returns to baseline"
+    }
+  ],
+  "key_events": [
+    {
+      "time": "06:00",
+      "decision": "Scale Search 2->3",
+      "evidence": "Morning ramp pushes simulated max-pod GPU to 75%, above the strict_realtime 50% target while still below raw pod capacity.",
+      "outcome": "Platform adds capacity before requests are rejected; the fixed fleet already has SLA-risk traffic."
+    },
+    {
+      "time": "08:00",
+      "decision": "Emit larger HPA recommendation: Search 3->5",
+      "evidence": "Organic spike drives simulated max-pod GPU to saturation on the active fleet, far above the 50% target.",
+      "outcome": "The system uses the utilization breach as an early warning, not a post-outage signal."
+    },
+    {
+      "time": "08:15",
+      "decision": "Serve peak with Search 14 replicas",
+      "evidence": "After scale-out, simulated max-pod GPU returns to about 50% on 14 replicas while serving 1.4K RPS.",
+      "outcome": "Platform capacity tracks the spike while manual peak provisioning would carry the larger fleet all day."
+    },
+    {
+      "time": "18:00",
+      "decision": "Scale down as traffic cools",
+      "evidence": "RPS drops below the peak window and max-pod utilization returns near target.",
+      "outcome": "Cost falls with demand instead of staying pinned to peak capacity."
+    }
+  ],
+  "models": [
+    {
+      "model_id": "search-ranking-v1",
+      "owner_team": "search",
+      "model_type": "xgboost_ltr",
+      "serving_backend": "triton",
+      "version": "1.0.0",
+      "sla_ms": 50,
+      "priority_tier": "high",
+      "batching_window_ms": 0,
+      "requires_gpu": true,
+      "target_gpu_util_pct": 50,
+      "target_cpu_util_pct": 60
+    }
+  ],
+  "phases": [
+    {
+      "name": "Baseline at target",
+      "description": "Search Ranking is running at its intended online target: strict_realtime 50% GPU target. Sample inference requests are served successfully.",
+      "endpoints": [
+        {
+          "endpoint_id": "search-ep-a",
+          "model_id": "search-ranking-v1",
+          "version": "1.0.0",
+          "serving_backend": "triton",
+          "instance_class": "gpu_a10",
+          "base_latency_ms": 22,
+          "capacity_qps": 200,
+          "current_qps": 100,
+          "gpu_util_pct": 50,
+          "healthy": true,
+          "cost_per_1k_predictions": 0.0014
+        },
+        {
+          "endpoint_id": "search-ep-b",
+          "model_id": "search-ranking-v1",
+          "version": "1.0.0",
+          "serving_backend": "triton",
+          "instance_class": "gpu_a10",
+          "base_latency_ms": 22,
+          "capacity_qps": 200,
+          "current_qps": 100,
+          "gpu_util_pct": 50,
+          "healthy": true,
+          "cost_per_1k_predictions": 0.0014
+        }
+      ],
+      "requests": [
+        {
+          "request_id": "req-101",
+          "model_id": "search-ranking-v1",
+          "priority": "high"
+        },
+        {
+          "request_id": "req-102",
+          "model_id": "search-ranking-v1",
+          "priority": "high"
+        }
+      ]
+    },
+    {
+      "name": "Organic spike before scale-out",
+      "description": "Traffic rises without advance notice. Search exceeds its 50% GPU target, so the autoscaler emits a scale-out recommendation before raw capacity is exhausted.",
+      "endpoints": [
+        {
+          "endpoint_id": "search-ep-a",
+          "model_id": "search-ranking-v1",
+          "version": "1.0.0",
+          "serving_backend": "triton",
+          "instance_class": "gpu_a10",
+          "base_latency_ms": 22,
+          "capacity_qps": 200,
+          "current_qps": 130,
+          "gpu_util_pct": 65,
+          "healthy": true,
+          "cost_per_1k_predictions": 0.0014
+        },
+        {
+          "endpoint_id": "search-ep-b",
+          "model_id": "search-ranking-v1",
+          "version": "1.0.0",
+          "serving_backend": "triton",
+          "instance_class": "gpu_a10",
+          "base_latency_ms": 22,
+          "capacity_qps": 200,
+          "current_qps": 140,
+          "gpu_util_pct": 70,
+          "healthy": true,
+          "cost_per_1k_predictions": 0.0014
+        }
+      ],
+      "requests": [
+        {
+          "request_id": "req-201",
+          "model_id": "search-ranking-v1",
+          "priority": "high"
+        },
+        {
+          "request_id": "req-202",
+          "model_id": "search-ranking-v1",
+          "priority": "high"
+        }
+      ]
+    },
+    {
+      "name": "After scale-out",
+      "description": "New GPU-backed pods have joined the serving pool. Aggregate load and max-pod utilization are back near target, so Search requests continue serving instead of being rejected.",
+      "endpoints": [
+        {
+          "endpoint_id": "search-ep-a",
+          "model_id": "search-ranking-v1",
+          "version": "1.0.0",
+          "serving_backend": "triton",
+          "instance_class": "gpu_a10",
+          "base_latency_ms": 22,
+          "capacity_qps": 200,
+          "current_qps": 95,
+          "gpu_util_pct": 48,
+          "healthy": true,
+          "cost_per_1k_predictions": 0.0014
+        },
+        {
+          "endpoint_id": "search-ep-b",
+          "model_id": "search-ranking-v1",
+          "version": "1.0.0",
+          "serving_backend": "triton",
+          "instance_class": "gpu_a10",
+          "base_latency_ms": 22,
+          "capacity_qps": 200,
+          "current_qps": 90,
+          "gpu_util_pct": 45,
+          "healthy": true,
+          "cost_per_1k_predictions": 0.0014
+        },
+        {
+          "endpoint_id": "search-ep-c",
+          "model_id": "search-ranking-v1",
+          "version": "1.0.0",
+          "serving_backend": "triton",
+          "instance_class": "gpu_a10",
+          "base_latency_ms": 22,
+          "capacity_qps": 200,
+          "current_qps": 85,
+          "gpu_util_pct": 43,
+          "healthy": true,
+          "cost_per_1k_predictions": 0.0014
+        }
+      ],
+      "requests": [
+        {
+          "request_id": "req-301",
+          "model_id": "search-ranking-v1",
+          "priority": "high"
+        },
+        {
+          "request_id": "req-302",
+          "model_id": "search-ranking-v1",
+          "priority": "high"
+        },
+        {
+          "request_id": "req-303",
+          "model_id": "search-ranking-v1",
+          "priority": "high"
+        }
+      ]
+    }
+  ]
+}

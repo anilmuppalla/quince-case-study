@@ -1,0 +1,163 @@
+{
+  "name": "Endpoint Unavailability",
+  "description": "A GPU-backed Search endpoint is unhealthy during elevated traffic. The platform applies the same rolling-replacement pattern it uses at deploy time: stop routing to the bad pod, provision a fresh healthy pod, wait for readiness gates to pass, shift traffic to the replacement, then drain and terminate the unhealthy pod. The unhealthy pod is never restored — it is replaced. While the replacement is coming up, high-priority Search overflows to healthy or premium GPU capacity so the SLA holds during the gap.",
+  "traffic_windows": [
+    {
+      "label": "Healthy baseline",
+      "start_hour": 0,
+      "end_hour": 10,
+      "rps_by_model": {
+        "search-ranking-v1": 180
+      },
+      "platform_replicas": {
+        "search-ranking-v1": 2
+      },
+      "event": "normal Search traffic before readiness failure"
+    },
+    {
+      "label": "Readiness failure detected",
+      "start_hour": 10,
+      "end_hour": 10.25,
+      "rps_by_model": {
+        "search-ranking-v1": 300
+      },
+      "fixed_replicas": {
+        "search-ranking-v1": 1
+      },
+      "platform_replicas": {
+        "search-ranking-v1": 2
+      },
+      "recommended_replicas": {
+        "search-ranking-v1": 4
+      },
+      "event": "rolling replacement begins: bad Search pod removed from routing, new healthy pod provisioning"
+    },
+    {
+      "label": "Replacement capacity active",
+      "start_hour": 10.25,
+      "end_hour": 14,
+      "rps_by_model": {
+        "search-ranking-v1": 500
+      },
+      "platform_replicas": {
+        "search-ranking-v1": 5
+      },
+      "event": "replacement Search pods are healthy and serving; old unhealthy pod has drained and terminated"
+    },
+    {
+      "label": "Incident cleared",
+      "start_hour": 14,
+      "end_hour": 24,
+      "rps_by_model": {
+        "search-ranking-v1": 180
+      },
+      "platform_replicas": {
+        "search-ranking-v1": 2
+      },
+      "event": "rolling replacement complete; fleet is back to normal headcount on healthy pods"
+    }
+  ],
+  "key_events": [
+    {
+      "time": "10:00",
+      "decision": "Begin rolling replacement: stop routing to the unhealthy pod and provision a fresh healthy pod",
+      "evidence": "Readiness checks fail on one Search endpoint while the remaining A10 pod is already above headroom.",
+      "outcome": "Routing exclusion is immediate so no request lands on the bad pod; the autoscaler signal `replace_unhealthy_replicas` triggers provisioning of a replacement on the same instance class."
+    },
+    {
+      "time": "10:00",
+      "decision": "Bridge the gap: high-priority Search overflows to healthy/premium capacity while the replacement comes up",
+      "evidence": "Effective fixed-fleet safe capacity is cut in half during elevated traffic; the replacement pod is not yet ready.",
+      "outcome": "High-priority traffic shifts to the H100 (which has headroom) and the surviving A10; the serving decision trace explains the cost and routing change. SLA is preserved during the readiness gap."
+    },
+    {
+      "time": "10:15",
+      "decision": "Replacement pod passes readiness; traffic shifts to it and the bad pod drains and terminates",
+      "evidence": "New A10 pod completes readiness probes; the unhealthy pod has no in-flight requests after routing exclusion.",
+      "outcome": "The fleet is back to healthy headcount via rolling replacement — same mechanism the platform uses for planned version changes, just triggered by failure detection rather than a deploy event. Platform rejects stay at zero throughout."
+    }
+  ],
+  "models": [
+    {
+      "model_id": "search-ranking-v1",
+      "owner_team": "search",
+      "model_type": "xgboost_ltr",
+      "serving_backend": "triton",
+      "version": "1.0.0",
+      "sla_ms": 50,
+      "priority_tier": "high",
+      "batching_window_ms": 0,
+      "requires_gpu": true,
+      "target_gpu_util_pct": 50,
+      "target_cpu_util_pct": 60
+    }
+  ],
+  "endpoints": [
+    {
+      "endpoint_id": "search-ep-a",
+      "model_id": "search-ranking-v1",
+      "version": "1.0.0",
+      "serving_backend": "triton",
+      "instance_class": "gpu_a10",
+      "base_latency_ms": 22,
+      "capacity_qps": 200,
+      "current_qps": 165,
+      "gpu_util_pct": 78,
+      "healthy": true,
+      "cost_per_1k_predictions": 0.0014
+    },
+    {
+      "endpoint_id": "search-ep-b",
+      "model_id": "search-ranking-v1",
+      "version": "1.0.0",
+      "serving_backend": "triton",
+      "instance_class": "gpu_a10",
+      "base_latency_ms": 22,
+      "capacity_qps": 200,
+      "current_qps": 120,
+      "gpu_util_pct": 60,
+      "healthy": false,
+      "cost_per_1k_predictions": 0.0014
+    },
+    {
+      "endpoint_id": "search-ep-premium",
+      "model_id": "search-ranking-v1",
+      "version": "1.0.0",
+      "serving_backend": "triton",
+      "instance_class": "gpu_h100",
+      "base_latency_ms": 14,
+      "capacity_qps": 100,
+      "current_qps": 5,
+      "gpu_util_pct": 10,
+      "healthy": true,
+      "cost_per_1k_predictions": 0.0191
+    }
+  ],
+  "requests": [
+    {
+      "request_id": "req-301",
+      "model_id": "search-ranking-v1",
+      "priority": "high"
+    },
+    {
+      "request_id": "req-302",
+      "model_id": "search-ranking-v1",
+      "priority": "high"
+    },
+    {
+      "request_id": "req-303",
+      "model_id": "search-ranking-v1",
+      "priority": "high"
+    },
+    {
+      "request_id": "req-304",
+      "model_id": "search-ranking-v1",
+      "priority": "high"
+    },
+    {
+      "request_id": "req-305",
+      "model_id": "search-ranking-v1",
+      "priority": "normal"
+    }
+  ]
+}

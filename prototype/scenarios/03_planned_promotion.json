@@ -1,0 +1,157 @@
+{
+  "name": "Planned Promotion / Flash-Sale Pre-Warm",
+  "description": "A known marketing event is coming. Current Recommendations load is normal, but the autoscaler has advance signal that browse and discovery traffic will spike during the event window. The platform should pre-warm online inference capacity rather than reacting after traffic arrives.",
+  "traffic_windows": [
+    {
+      "label": "Pre-event baseline",
+      "start_hour": 0,
+      "end_hour": 6,
+      "rps_by_model": {
+        "recommendations-v1": 180
+      },
+      "platform_replicas": {
+        "recommendations-v1": 2
+      },
+      "event": "normal Recommendations demand before marketing launch"
+    },
+    {
+      "label": "Pre-warm window",
+      "start_hour": 6,
+      "end_hour": 8,
+      "rps_by_model": {
+        "recommendations-v1": 220
+      },
+      "platform_replicas": {
+        "recommendations-v1": 8
+      },
+      "event": "planned promotion signal pre-warms Recommendations capacity"
+    },
+    {
+      "label": "Flash-sale peak",
+      "start_hour": 8,
+      "end_hour": 14,
+      "rps_by_model": {
+        "recommendations-v1": 900
+      },
+      "platform_replicas": {
+        "recommendations-v1": 8
+      },
+      "event": "promotion traffic arrives"
+    },
+    {
+      "label": "Post-event taper",
+      "start_hour": 14,
+      "end_hour": 18,
+      "rps_by_model": {
+        "recommendations-v1": 450
+      },
+      "platform_replicas": {
+        "recommendations-v1": 4
+      },
+      "event": "autoscaler follows demand down"
+    },
+    {
+      "label": "Evening baseline",
+      "start_hour": 18,
+      "end_hour": 24,
+      "rps_by_model": {
+        "recommendations-v1": 180
+      },
+      "platform_replicas": {
+        "recommendations-v1": 2
+      },
+      "event": "event window closed"
+    }
+  ],
+  "key_events": [
+    {
+      "time": "06:00",
+      "decision": "Pre-warm Recommendations 2->8",
+      "evidence": "Promotion calendar predicts a flash-sale Recommendations window before traffic arrives.",
+      "outcome": "The platform buys readiness for the event window without paying peak cost for the full day."
+    },
+    {
+      "time": "08:00",
+      "decision": "Hold pre-warmed fleet through promotion peak",
+      "evidence": "Incoming Recommendations traffic reaches 900 RPS.",
+      "outcome": "Realtime recommendations stay within safe serving capacity as the event begins."
+    },
+    {
+      "time": "14:00",
+      "decision": "Scale down after promotion taper",
+      "evidence": "Traffic falls from peak and planned event signal expires.",
+      "outcome": "Run-rate cost drops instead of carrying peak-provisioned capacity into the evening."
+    }
+  ],
+  "models": [
+    {
+      "model_id": "recommendations-v1",
+      "owner_team": "recommendations",
+      "model_type": "tensorflow",
+      "serving_backend": "tf_serving",
+      "version": "1.0.0",
+      "sla_ms": 120,
+      "priority_tier": "high",
+      "batching_window_ms": 8,
+      "requires_gpu": true,
+      "target_gpu_util_pct": 60,
+      "target_cpu_util_pct": 70
+    }
+  ],
+  "endpoints": [
+    {
+      "endpoint_id": "recs-ep-a",
+      "model_id": "recommendations-v1",
+      "version": "1.0.0",
+      "serving_backend": "tf_serving",
+      "instance_class": "gpu_a10",
+      "base_latency_ms": 72,
+      "capacity_qps": 250,
+      "current_qps": 90,
+      "gpu_util_pct": 36,
+      "healthy": true,
+      "cost_per_1k_predictions": 0.0011
+    },
+    {
+      "endpoint_id": "recs-ep-b",
+      "model_id": "recommendations-v1",
+      "version": "1.0.0",
+      "serving_backend": "tf_serving",
+      "instance_class": "gpu_a10",
+      "base_latency_ms": 72,
+      "capacity_qps": 250,
+      "current_qps": 100,
+      "gpu_util_pct": 40,
+      "healthy": true,
+      "cost_per_1k_predictions": 0.0011
+    }
+  ],
+  "requests": [
+    {
+      "request_id": "req-201",
+      "model_id": "recommendations-v1",
+      "priority": "high"
+    },
+    {
+      "request_id": "req-202",
+      "model_id": "recommendations-v1",
+      "priority": "high"
+    },
+    {
+      "request_id": "req-203",
+      "model_id": "recommendations-v1",
+      "priority": "high"
+    },
+    {
+      "request_id": "req-204",
+      "model_id": "recommendations-v1",
+      "priority": "normal"
+    }
+  ],
+  "planned_events": {
+    "recommendations-v1": {
+      "reason": "flash sale 10:00-14:00 PT",
+      "expected_load_x": 4.0
+    }
+  }
+}

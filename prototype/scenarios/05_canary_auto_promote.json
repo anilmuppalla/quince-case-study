@@ -1,0 +1,71 @@
+{
+  "name": "Fraud Canary - Auto-Promote",
+  "description": "A new Fraud Detection candidate has completed a canary against the production control. Tight operational regression budgets, precision/recall drop limits, and a 5000-observation minimum are set explicitly in the scenario guardrails. FPR is a hard gate alongside latency and error rate: a meaningful FPR increase blocks legitimate customers immediately and is treated the same as a latency spike. Precision and recall drops trigger owner review rather than auto-rollback because they require fraud analyst judgment. All metrics are within their bands, so the deployment controller auto-promotes without owner intervention.",
+  "models": [
+    {
+      "model_id": "fraud-detection-v1",
+      "owner_team": "fraud",
+      "model_type": "onnx",
+      "serving_backend": "onnx_runtime",
+      "version": "2.3.7",
+      "sla_ms": 80,
+      "priority_tier": "high",
+      "batching_window_ms": 0,
+      "requires_gpu": false,
+      "target_gpu_util_pct": 50,
+      "target_cpu_util_pct": 60
+    }
+  ],
+  "endpoints": [
+    {
+      "endpoint_id": "fraud-ep-a",
+      "model_id": "fraud-detection-v1",
+      "version": "2.3.7",
+      "serving_backend": "onnx_runtime",
+      "instance_class": "cpu_c7i",
+      "base_latency_ms": 35,
+      "capacity_qps": 300,
+      "current_qps": 90,
+      "gpu_util_pct": 0,
+      "cpu_util_pct": 32,
+      "healthy": true,
+      "cost_per_1k_predictions": 0.00008
+    }
+  ],
+  "requests": [
+    {"request_id": "req-401", "model_id": "fraud-detection-v1", "priority": "high"},
+    {"request_id": "req-402", "model_id": "fraud-detection-v1", "priority": "high"}
+  ],
+  "canary": {
+    "model_id": "fraud-detection-v1",
+    "candidate_version": "2.4.0",
+    "rollback_to_version": "2.3.7",
+    "candidate_metrics": {
+      "p99_latency_ms": 35.0,
+      "error_rate_pct": 0.04,
+      "timeout_rate_pct": 0.01,
+      "false_positive_rate": 0.021,
+      "precision": 0.964,
+      "recall": 0.876,
+      "sample_size": 6200
+    },
+    "control_metrics": {
+      "p99_latency_ms": 36.0,
+      "error_rate_pct": 0.05,
+      "timeout_rate_pct": 0.01,
+      "false_positive_rate": 0.022,
+      "precision": 0.960,
+      "recall": 0.871,
+      "sample_size": 6200
+    },
+    "guardrails": {
+      "max_latency_regression_pct": 5.0,
+      "max_error_regression_pct": 10.0,
+      "max_timeout_regression_pct": 5.0,
+      "max_fpr_increase_pct": 10.0,
+      "max_precision_drop_pct": 2.0,
+      "max_recall_drop_pct": 3.0,
+      "min_observations": 5000
+    }
+  }
+}

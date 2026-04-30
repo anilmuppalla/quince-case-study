@@ -1,0 +1,235 @@
+{
+  "name": "Normal Load",
+  "description": "Smooth, predictable normal-day traffic for Search Ranking. There is no surprise spike: demand rises through the morning, plateaus during business hours, and tapers at night. The platform should right-size Search replicas with the diurnal curve while keeping the workload SLA-safe.",
+  "traffic_windows": [
+    {
+      "label": "Late-night baseline",
+      "start_hour": 0,
+      "end_hour": 4,
+      "rps_by_model": {
+        "search-ranking-v1": 45
+      },
+      "platform_replicas": {
+        "search-ranking-v1": 1
+      },
+      "recommended_replicas": {
+        "search-ranking-v1": 1
+      },
+      "manual_peak_replicas": {
+        "search-ranking-v1": 2
+      },
+      "event": "normal off-peak Search traffic; platform runs the minimum safe fleet"
+    },
+    {
+      "label": "Early ramp",
+      "start_hour": 4,
+      "end_hour": 7,
+      "rps_by_model": {
+        "search-ranking-v1": 65
+      },
+      "platform_replicas": {
+        "search-ranking-v1": 1
+      },
+      "recommended_replicas": {
+        "search-ranking-v1": 1
+      },
+      "manual_peak_replicas": {
+        "search-ranking-v1": 2
+      },
+      "event": "traffic rises gradually and remains inside one-replica target capacity"
+    },
+    {
+      "label": "Morning ramp",
+      "start_hour": 7,
+      "end_hour": 10,
+      "rps_by_model": {
+        "search-ranking-v1": 95
+      },
+      "platform_replicas": {
+        "search-ranking-v1": 1
+      },
+      "recommended_replicas": {
+        "search-ranking-v1": 1
+      },
+      "manual_peak_replicas": {
+        "search-ranking-v1": 2
+      },
+      "event": "observed max-pod GPU approaches Search's 50% target but does not breach it"
+    },
+    {
+      "label": "Midday scale-up",
+      "start_hour": 10,
+      "end_hour": 13,
+      "rps_by_model": {
+        "search-ranking-v1": 125
+      },
+      "platform_replicas": {
+        "search-ranking-v1": 2
+      },
+      "recommended_replicas": {
+        "search-ranking-v1": 2
+      },
+      "manual_peak_replicas": {
+        "search-ranking-v1": 2
+      },
+      "event": "Search max-pod GPU crosses the 50% utilization target; platform adds one replica"
+    },
+    {
+      "label": "Business-hours plateau",
+      "start_hour": 13,
+      "end_hour": 16,
+      "rps_by_model": {
+        "search-ranking-v1": 145
+      },
+      "platform_replicas": {
+        "search-ranking-v1": 2
+      },
+      "recommended_replicas": {
+        "search-ranking-v1": 2
+      },
+      "manual_peak_replicas": {
+        "search-ranking-v1": 2
+      },
+      "event": "smooth daily peak remains well below fixed-fleet capacity"
+    },
+    {
+      "label": "Afternoon taper",
+      "start_hour": 16,
+      "end_hour": 19,
+      "rps_by_model": {
+        "search-ranking-v1": 135
+      },
+      "platform_replicas": {
+        "search-ranking-v1": 2
+      },
+      "recommended_replicas": {
+        "search-ranking-v1": 2
+      },
+      "manual_peak_replicas": {
+        "search-ranking-v1": 2
+      },
+      "event": "traffic starts tapering, but still needs daytime Search capacity"
+    },
+    {
+      "label": "Evening browse",
+      "start_hour": 19,
+      "end_hour": 22,
+      "rps_by_model": {
+        "search-ranking-v1": 105
+      },
+      "platform_replicas": {
+        "search-ranking-v1": 2
+      },
+      "recommended_replicas": {
+        "search-ranking-v1": 2
+      },
+      "manual_peak_replicas": {
+        "search-ranking-v1": 2
+      },
+      "event": "moderate evening traffic stays served with daytime capacity"
+    },
+    {
+      "label": "Night scale-down",
+      "start_hour": 22,
+      "end_hour": 24,
+      "rps_by_model": {
+        "search-ranking-v1": 65
+      },
+      "platform_replicas": {
+        "search-ranking-v1": 1
+      },
+      "recommended_replicas": {
+        "search-ranking-v1": 1
+      },
+      "manual_peak_replicas": {
+        "search-ranking-v1": 2
+      },
+      "event": "Search max-pod GPU is sustained low after the evening taper; platform scales back down"
+    }
+  ],
+  "key_events": [
+    {
+      "time": "00:00",
+      "decision": "right-size to off-peak baseline",
+      "evidence": "simulated max-pod GPU is 22.5%, below the 50% Search target on 1 active replica",
+      "outcome": "platform scales below the fixed two-replica fleet while serving all traffic"
+    },
+    {
+      "time": "10:00",
+      "decision": "scale up with normal daily Search demand",
+      "evidence": "simulated max-pod GPU reaches 62.5%, above the 50% Search target on the pre-scale fleet.",
+      "outcome": "platform moves from 1 to 2 active replicas before any SLA risk appears"
+    },
+    {
+      "time": "22:00",
+      "decision": "scale down after the normal taper",
+      "evidence": "simulated max-pod GPU on the two-replica fleet falls to 16.2%; after scale-down it is roughly 32.5%, still below the 50% target.",
+      "outcome": "cost falls with predictable traffic while the workload remains SLA-safe"
+    }
+  ],
+  "models": [
+    {
+      "model_id": "search-ranking-v1",
+      "owner_team": "search",
+      "model_type": "xgboost_ltr",
+      "serving_backend": "triton",
+      "version": "1.0.0",
+      "sla_ms": 50,
+      "priority_tier": "high",
+      "batching_window_ms": 0,
+      "requires_gpu": true,
+      "target_gpu_util_pct": 50,
+      "target_cpu_util_pct": 60
+    }
+  ],
+  "endpoints": [
+    {
+      "endpoint_id": "search-ep-a",
+      "model_id": "search-ranking-v1",
+      "version": "1.0.0",
+      "serving_backend": "triton",
+      "instance_class": "gpu_a10",
+      "base_latency_ms": 22,
+      "capacity_qps": 200,
+      "current_qps": 40,
+      "gpu_util_pct": 25,
+      "healthy": true,
+      "cost_per_1k_predictions": 0.0014
+    },
+    {
+      "endpoint_id": "search-ep-b",
+      "model_id": "search-ranking-v1",
+      "version": "1.0.0",
+      "serving_backend": "triton",
+      "instance_class": "gpu_a10",
+      "base_latency_ms": 22,
+      "capacity_qps": 200,
+      "current_qps": 70,
+      "gpu_util_pct": 35,
+      "healthy": true,
+      "cost_per_1k_predictions": 0.0014
+    }
+  ],
+  "requests": [
+    {
+      "request_id": "req-101",
+      "model_id": "search-ranking-v1",
+      "priority": "high"
+    },
+    {
+      "request_id": "req-102",
+      "model_id": "search-ranking-v1",
+      "priority": "high"
+    },
+    {
+      "request_id": "req-103",
+      "model_id": "search-ranking-v1",
+      "priority": "high"
+    },
+    {
+      "request_id": "req-104",
+      "model_id": "search-ranking-v1",
+      "priority": "normal"
+    }
+  ]
+}
